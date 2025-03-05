@@ -16,7 +16,7 @@ from django.utils.translation import gettext_lazy as _
 import django
 from django.utils.translation import gettext
 django.utils.translation.ugettext = gettext
-import debugpy
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -47,7 +47,7 @@ SECRET_KEY = 'gx%(-$i!e@y9o-xa^=962t*f-ngn-!u+zf)m-$icedw8pzb@&s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # OVERRIDEN IN SETTINGS_LOCAL
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", False)
 
 # OVERRIDEN IN SETTINGS_LOCAL
 ALLOWED_HOSTS = []
@@ -184,16 +184,27 @@ STATICFILES_FINDERS = [
 ]
 
 # ./manage.py bower install
+# BOWER_INSTALLED_APPS = (
+#     'jquery',
+#     'jquery-ui',
+#     'datatables.net',
+#     'datatables.net-dt',
+#     'popper.js',
+#     'bootstrap',
+#     'toastr',
+#     'jstree',
+#     'jquery-tagit',
+# )
 BOWER_INSTALLED_APPS = (
-    'jquery',
-    'jquery-ui',
-    'datatables.net',
-    'datatables.net-dt',
-    'popper.js',
-    'bootstrap',
-    'toastr',
-    'jstree',
-    'jquery-tagit',
+	'bootstrap#3.3.7',
+ 	'datatables.net#1.10.16',
+ 	'datatables.net-dt#3.2.2',
+ 	'jquery#3.3.1',
+ 	'jquery-tagit#6ccd2de95e7cf7e254ad1a82e946450c21e40421',
+ 	'jquery-ui#1.12.1',
+ 	'jstree#3.3.5',
+ 	'popper.js#1.14.1',
+ 	'toastr#2.1.3'
 )
 
 REST_FRAMEWORK = {
@@ -252,9 +263,9 @@ PATCH="4"
 #     (_("Georeferenciació - Georeferencing calculator"), "https://www.gbif.org/tool/81315/georeferencing-calculator"),
 #     (_("Georeferenciació - Berkeley Mapper"), "http://berkeleymapper.berkeley.edu/#"),
 # )
-if os.getenv("DEBUG") and not debugpy.is_client_connected():
+
+if os.getenv("DEBUG"): 
     try:
-        debugpy.listen(("0.0.0.0", 5678))
-        print("Waiting for debugger to attach...")
-    except RuntimeError:
-        print("Debugger is already listening. Skipping setup.")
+        from settings_debug import *
+    except ImportError as e:
+        pass    

@@ -429,7 +429,21 @@ class Toponimversio(models.Model):
                         dist_max = 0
                         vertexes = extract_coords(union.coords)
                         for vertex in vertexes:
-                            vertex_haversine = ( vertex.y, vertex.x )
+                            x_haver = None
+                            y_haver = None
+                            if vertex.x > 180:
+                                x_haver = 180
+                            elif vertex.x < -180:
+                                x_haver = -180
+                            else:
+                                x_haver = vertex.x
+                            if vertex.y > 90:
+                                y_haver = 90
+                            elif vertex.y < -90:
+                                y_haver = -90
+                            else:
+                                y_haver = vertex.y
+                            vertex_haversine = ( y_haver, x_haver )
                             #dist = vertex.distance(centroid)
                             dist = haversine( centroid_haversine, vertex_haversine, unit = 'm' )
                             if dist > dist_max:
