@@ -87,7 +87,7 @@ from django.utils.translation import ugettext
 from django.http import Http404
 from rest_framework.exceptions import ParseError
 from django.template.loader import TemplateDoesNotExist
-from georef.sec_calculation import compute_sec
+from georef.sec_calculation import compute_sec, compute_spatial_fit
 
 import pandas as pd
 import sys
@@ -173,10 +173,10 @@ def generic_datatable_data_generator(request, search_field_list, queryClass, cla
     except KeyError:
         pass
 
-    queryset = queryClass.objects.all()
+    queryset = queryClass.objects.all().distinct()
 
     if q:
-        queryset = queryset.filter(q)
+        queryset = queryset.filter(q).distinct()
 
     if len(filter_clause) == 0:
         queryset = queryset.order_by(*order_clause)
@@ -1732,6 +1732,127 @@ def toponims_detail_pdf(request, idtoponim=None):
 
     return response
 
+
+@login_required
+def toponims_list_dwc(request):
+    search_field_list = ('nom_str', 'aquatic_str', 'idtipustoponim.nom')
+    sort_translation_list = {'nom_str': 'nom', 'aquatic_str': 'aquatic', 'idtipustoponim.nom': 'idtipustoponim__nom'}
+    field_translation_list = {'nom_str': 'nom', 'aquatic_str': 'aquatic', 'idtipustoponim.nom': 'idtipustoponim__nom'}
+    data = generic_datatable_list_endpoint(request, search_field_list, Toponim, ToponimSerializer,
+                                           field_translation_list, sort_translation_list, paginate=False)
+    
+    records = data.data['data']
+
+    id_toponims = []
+    for record in records:
+        id_toponims.append(record['id'])
+
+    toponims = Toponim.objects.filter(id__in=id_toponims)
+    taula_toponims = {}
+    for t in toponims:
+        taula_toponims[t.id] = t
+
+    versions = {}
+    darreres_versions = Toponimversio.objects.filter(last_version=True).filter(idtoponim__id__in=id_toponims)
+    for darrera_versio in darreres_versions:
+        versions[darrera_versio.idtoponim.id] = darrera_versio
+        
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = get_sitenames_export_filename('csv')
+    writer = csv.writer(response, delimiter=';')
+    #writer.writerow([ugettext('nom_toponim'), ugettext('aquatic?'), ugettext('tipus_toponim'), ugettext('centroide_x'), ugettext('centroide_y'),ugettext('incertesa_m'), ugettext('incertesa_calc_georef')])
+    
+    # Location -> https://dwc.tdwg.org/terms/#location
+
+    # Toponim
+    # nom topònim -> https://dwc.tdwg.org/terms/#dwc:locality
+    # jerarquia -> https://dwc.tdwg.org/terms/#dwc:higherGeography
+
+    # Versio
+    # versió capturada del recurs -> https://dwc.tdwg.org/terms/#dwc:georeferenceSources
+    # Sistema referència del recurs -> https://dwc.tdwg.org/terms/#dwc:verbatimSRS
+    # data -> https://dwc.tdwg.org/terms/#dwc:georeferencedDate
+    # autor -> https://dwc.tdwg.org/terms/#dwc:georeferencedBy
+    # Coordenada X original -> N/A? https://dwc.tdwg.org/terms/#dwc:decimalLongitude
+    # Coordenada Y original -> N/A? https://dwc.tdwg.org/terms/#dwc:decimalLatitude
+    # Altitud profunditat màxima(m) -> https://dwc.tdwg.org/terms/#dwc:maximumDepthInMeters
+    # Altitud profunditat mínima(m) -> https://dwc.tdwg.org/terms/#dwc:minimumDepthInMeters
+    # incertesa coordenades -> https://dwc.tdwg.org/terms/#dwc:coordinateUncertaintyInMeters
+    # observacions -> https://dwc.tdwg.org/terms/#dwc:georeferenceRemarks
+
+    # geometria -> https://dwc.tdwg.org/terms/#dwc:footprintWKT
+    # WGS84 constant -> https://dwc.tdwg.org/terms/#dwc:footprintSRS
+    # derivable a partir centroide/geometria -> https://dwc.tdwg.org/terms/#dwc:footprintSpatialFit
+
+    writer.writerow([
+        "https://dwc.tdwg.org/terms/#dwc:locality", 
+        "https://dwc.tdwg.org/terms/#dwc:higherGeography", 
+        "https://dwc.tdwg.org/terms/#dwc:georeferenceSources",
+        "https://dwc.tdwg.org/terms/#dwc:verbatimSRS",
+        "https://dwc.tdwg.org/terms/#dwc:georeferencedDate",
+        "https://dwc.tdwg.org/terms/#dwc:georeferencedBy",
+        "https://dwc.tdwg.org/terms/#dwc:decimalLongitude",
+        "https://dwc.tdwg.org/terms/#dwc:decimalLatitude",
+        "https://dwc.tdwg.org/terms/#dwc:maximumDepthInMeters",
+        "https://dwc.tdwg.org/terms/#dwc:minimumDepthInMeters",
+        "https://dwc.tdwg.org/terms/#dwc:coordinateUncertaintyInMeters",
+        "https://dwc.tdwg.org/terms/#dwc:georeferenceRemarks",
+        "https://dwc.tdwg.org/terms/#dwc:footprintWKT",
+        "https://dwc.tdwg.org/terms/#dwc:footprintSRS",
+        "https://dwc.tdwg.org/terms/#dwc:footprintSpatialFit"
+    ])
+    for record in records:
+        versio = None
+        toponim = None
+        try:
+            toponim = taula_toponims[record['id']]
+            versio = versions[record['id']]
+        except KeyError:
+            pass
+        if versio:
+            georef_sources = versio.idrecursgeoref.nom if versio.idrecursgeoref else '' 
+            srs = versio.idsistemareferenciarecurs.sistemareferencia if versio.idsistemareferenciarecurs else ''
+            author = "{0}, {1}".format(versio.iduser.last_name, versio.iduser.first_name ) if versio.iduser else ''
+            spatial_fit = compute_spatial_fit( versio.precisio_h, versio.union_geometry() )
+            geom = versio.union_geometry()
+            writer.writerow([
+                record['nom_str'], 
+                toponim.get_denormalized_toponimtree_str(), 
+                georef_sources, 
+                srs, 
+                versio.datacaptura, 
+                author, 
+                versio.get_coordenada_x_centroide, 
+                versio.get_coordenada_y_centroide,
+                versio.altitud_profunditat_maxima,
+                versio.altitud_profunditat_minima,
+                versio.precisio_h,
+                versio.observacions,
+                geom.wkt if geom else None,
+                "epsg:4326",
+                f"{spatial_fit:.3f}" if spatial_fit is not None else None
+            ])            
+        else:
+            writer.writerow([
+                record['nom_str'], 
+                toponim.get_denormalized_toponimtree_str(),
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                ''
+            ])
+
+    return response
+    
 
 @login_required
 def toponims_list_csv(request):

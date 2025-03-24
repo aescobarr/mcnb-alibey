@@ -2,6 +2,7 @@ import json
 from django.contrib.gis.geos import GEOSGeometry, Point, MultiPoint
 from django.contrib.gis.gdal import SpatialReference, CoordTransform
 from django.db import connection
+import math
 import random
 import sys
 
@@ -250,3 +251,14 @@ def compute_sec(geometry, max_points_polygon, tolerance, sample_size, n_nearest)
         return best_sec
     else:
         return sec
+
+def compute_spatial_fit( uncertainty, original_geom ):    
+    if original_geom is not None and (original_geom.geom_typeid == 3 or original_geom.geom_typeid == 6): # Polygon or multi polygon
+        if uncertainty:
+            srs_aeqd = get_aeqd_srs_from_wgs_geom(original_geom)
+            aeqd_geometry = wgs_to_azimuthal_eq(original_geom, srs_aeqd)
+            return round(uncertainty**2 * math.pi / aeqd_geometry.area, 3)
+        else:
+            return None
+    else:
+        return None

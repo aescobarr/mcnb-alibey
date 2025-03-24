@@ -245,6 +245,13 @@ table#toponim_edit tbody tr td ul li{
     background-color: #f2f2f2;
 }
 
+.imatge_dwc {
+    background: url(/static/georef/css/icon/gbif-dot-org-green-logo.png) no-repeat;
+    display: inline-block;
+    height: 16px;
+    width: 16px;
+}
+
 .imatge_pdf {
     background: url(/static/georef/css/icon/pdf16x16.png) no-repeat;
     display: inline-block;

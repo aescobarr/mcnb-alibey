@@ -1,6 +1,11 @@
 var sidebar;
 var zoom_to_extent = false;
 
+var exportDWC = function(){
+    var params = table.ajax.params();
+    window.location.href = _toponims_list_dwc + '?' + jQuery.param(params);
+}
+
 var exportPDF = function(){
     var params = table.ajax.params();
     window.location.href = _toponims_list_pdf + '?' + jQuery.param(params);

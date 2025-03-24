@@ -72,6 +72,7 @@ urlpatterns = [
     re_path(r'^toponims/list/pdf/$', views.toponims_list_pdf, name='toponims_list_pdf'),
     re_path(r'^toponims/detail/pdf/(?P<idtoponim>[0-9A-Za-z_\-]+)/$', views.toponims_detail_pdf, name='toponims_detail_pdf'),
     re_path(r'^toponims/list/csv/$', views.toponims_list_csv, name='toponims_list_csv'),
+    re_path(r'^toponims/list/dwc/$', views.toponims_list_dwc, name='toponims_list_dwc'),
     re_path(r'^toponims/list/xls/$', views.toponims_list_xls, name='toponims_list_xls'),
     re_path(r'^toponims/import/$', views.toponims_import, name='toponims_import'),
 

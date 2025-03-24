@@ -65,6 +65,7 @@
         var _import_shapefile_url = "{% url 'process_shapefile' %}";
         var wms_url = "{{ wms_url }}";
         var _toponims_list_pdf = "{% url 'toponims_list_pdf' %}";
+        var _toponims_list_dwc = "{% url 'toponims_list_dwc' %}";
         var _toponims_list_csv = "{% url 'toponims_list_csv' %}";
         var _toponims_list_xls = "{% url 'toponims_list_xls' %}";
 
@@ -127,6 +128,7 @@
                             <a class="imatge_xls" title="{% trans 'Exportar a xls' %}" href="#" onclick="javascript:exportXLS(); return false;"></a>
                             <a class="imatge_csv" title="{% trans 'Exportar a csv' %}" href="#" onclick="javascript:exportCSV(); return false;"></a>
                             <a class="imatge_pdf" title="{% trans 'Exportar a pdf' %}" href="#" onclick="javascript:exportPDF(); return false;"></a>
+                            <a class="imatge_dwc" title="{% trans 'Exportar a Darwin Core' %}" href="#" onclick="javascript:exportDWC(); return false;"></a>
                         </div>
                         <div class="btn-group col-md-10" role="group">
                             <button class="btn btn-default alltbtn active">{% trans 'Tots' %}</button>
