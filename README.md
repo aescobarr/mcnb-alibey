@@ -1,5 +1,8 @@
 # Ali-Bey
 
+> [!WARNING]
+**This repository has been archived and is no longer maintained. The Ali-Bey API is currently included in the dockerized version, which is actively maintained here: [alibey_docker](https://github.com/aescobarr/alibey_docker)**
+
 Ali-Bey is a web application for georeferencing site names, originally created for the Museu de Ciencies Naturals de Barcelona - [MCNB](https://museuciencies.cat/). It allows the storage, indexing and querying of georeferenced site names, including their geometry, and supports multiple versions of the site names. Ali-Bey is built using [Django Python web framework](https://www.djangoproject.com/).
 
 Some functionality of the application is also exposed as an API which allows to query the underlying data. The API is a separate project and can be found [here](https://github.com/aescobarr/mcnb-alibey-api).
